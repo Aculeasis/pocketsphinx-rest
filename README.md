@@ -3,7 +3,7 @@ pocketsphinx-rest
 Простой веб-сервис распознавания речи с помощью [PocketSphinx](https://github.com/cmusphinx/pocketsphinx)
 
 ## Установка
-###Быстрый старт
+### Быстрый старт
 
 Запуск\обновление из хаба: `./pocketsphinx_rest.py --upgrade`
 
