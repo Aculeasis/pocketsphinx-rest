@@ -3,6 +3,13 @@ pocketsphinx-rest
 Простой веб-сервис распознавания речи с помощью [PocketSphinx](https://github.com/cmusphinx/pocketsphinx)
 
 ## Установка
+###Быстрый старт
+
+Запуск\обновление из хаба: `./pocketsphinx_rest.py --upgrade`
+
+Полное описание [тут](https://github.com/Aculeasis/docker-starter)
+
+PS: Т.к. готовых образов для armv7l нет их можно только собрать добавив ключь `-b`
 
 ### Готовый докер
 На aarch64 (Например Orange Pi Prime и прочие H5):
