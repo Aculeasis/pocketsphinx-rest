@@ -9,10 +9,13 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import platform
 
 WORK_DIR = os.path.abspath(sys.path[0])
 HOME_DIR = os.path.expanduser('~')
 DATA_PATH = os.path.join(HOME_DIR, '.docker_starter')
+OS = platform.uname()[0].lower()
+OS = 'linux' if OS.startswith('linux') else OS
 
 
 def get_ip_address():
@@ -22,8 +25,8 @@ def get_ip_address():
 
 
 def get_arch() -> str:
-    aarch = {'x86_64': 'amd64', 'aarch64': 'arm64v8', 'armv7l': 'arm32v7'}
-    return aarch.get(os.uname()[4], 'unknown')
+    aarch = {'x86_64': 'amd64', 'amd64': 'amd64', 'aarch64': 'arm64v8', 'armv7l': 'arm32v7'}
+    return aarch.get(platform.uname()[4].lower(), 'unknown')
 
 
 def __request_handler(url, headers, use_info=False) -> dict:
@@ -86,6 +89,10 @@ def __docker_run_fatal(cmd: list, fatal: bool = False, stderr=subprocess.PIPE, s
     return run
 
 
+def _docker_test() -> bool:
+    return not __docker_run_fatal(['ps', ]).returncode
+
+
 def _docker_containers() -> list:
     # вернет список из [имя контейнера, ], ps -a --format "{{.Names}}"
     run = __docker_run_fatal(['ps', '-a', '--format', '{{.Names}}'], True)
@@ -120,7 +127,8 @@ def _docker_build(rep_tag: str, file: str, path: str) -> bool:
 
 
 def _docker_run(cmd: list):
-    return not __docker_run_fatal(['run', ] + cmd).returncode
+    # noinspection PyTypeChecker
+    return not __docker_run_fatal(cmd=['run', ] + cmd, stderr=None).returncode
 
 
 def _docker_images_sha256() -> dict:
@@ -128,6 +136,8 @@ def _docker_images_sha256() -> dict:
     run = __docker_run_fatal(['images', '--digests', '--format', '{{.Repository}}:{{.Tag}} {{.Digest}}'], True)
     data = {}
     for line in run.stdout.decode().strip('\n').rsplit('\n'):
+        if len(line) < 3:
+            continue
         rep_tag, sha256 = line.rsplit(' ', 1)
         data[rep_tag] = sha256
     return data
@@ -138,6 +148,8 @@ def _docker_images_id() -> dict:
     run = __docker_run_fatal(['images', '--format', '{{.Repository}}:{{.Tag}} {{.ID}}'], True)
     data = {}
     for line in run.stdout.decode().strip('\n').rsplit('\n'):
+        if len(line) < 3:
+            continue
         rep_tag, id_ = line.rsplit(' ', 1)
         data[rep_tag] = id_
     return data
@@ -153,14 +165,20 @@ class DockerStarter:
     def __init__(self, cfg: dict or list):
         self._cfg = cfg if type(cfg) is list else [cfg, ]
         self._args = self._cli_parse()
-        self._containers = _docker_containers()
         self._check()
+        self._containers = _docker_containers()
         if self._args.t:
             self._all_once()
         else:
             self._one_by_one()
 
     def _check(self):
+        if OS != 'linux':
+            print('Warning! OS {} partial support.'.format(OS))
+        if not _docker_test():
+            print('Docker not installed or not enough privileges')
+            print('Install docker or use sudo')
+            exit(1)
         images = set()
         names = set()
         for cfg in self._cfg:
@@ -192,6 +210,12 @@ class DockerStarter:
 
     @staticmethod
     def _cli_parse():
+        def key_val(string):
+            data = string.split('=', 1)
+            if len(data) != 2:
+                print('Bad argument -e {}, use -e KEY=VAL'.format(string))
+                exit(1)
+            return data
         parser = argparse.ArgumentParser()
         one = parser.add_mutually_exclusive_group(required=True)
         one.add_argument('--start', action='store_true', help='Start container')
@@ -202,7 +226,7 @@ class DockerStarter:
         one.add_argument('--purge', action='store_true', help='Remove container, image and data')
         one.add_argument('--restart', action='store_true', help='Run --stop && --start')
 
-        parser.add_argument('-e', action='append', metavar='KEY=VAL', help='Add more env')
+        parser.add_argument('-e', action='append', type=key_val, metavar='KEY=VAL', help='Add more env')
         parser.add_argument('-b', action='store_true', help='Build images from Dockerfile, no pull from hub')
         parser.add_argument('-t', action='store_true', help='Threaded works (Dangerous)')
         parser.add_argument('-f', action='store_true', help='Allow upgrade image from other source (hub or -b)')
@@ -260,8 +284,8 @@ class _StarterWorker(threading.Thread):
 
     def _start(self):
         if self._cfg['name'] in self._containers:
-            print('start {}'.format(self._cfg['name']))
-            return _docker_start(self._cfg['name'])
+            result = '' if _docker_start(self._cfg['name']) else 'Failed '
+            return print('{}start {}'.format(result, self._cfg['name']))
         if self._cfg['image'] not in _docker_images_sha256() and not self._pull():
             return print('Runtime error, exit.')
         self._run()
@@ -352,21 +376,23 @@ class _StarterWorker(threading.Thread):
             shutil.rmtree(self._cfg['data_path'], ignore_errors=True)
 
     def _run(self):
-        makedir = False
         cmd = ['-d', ]
         for key, val in self._cfg.get('p', {}).items():
             cmd.extend(['-p', '{}:{}'.format(key, val)])
 
         for key, val in self._cfg.get('v', {}).items():
-            makedir = True
-            cmd.extend(['-v', '{}:{}'.format(os.path.join(self._cfg['data_path'], key), val)])
-
-        for key, val in self._cfg.get('e', {}).items():
-            cmd.extend(['-e', '{}={}'.format(key, val)])
+            mount_path = os.path.join(self._cfg['data_path'], key)
+            os.makedirs(mount_path, exist_ok=True)
+            cmd.extend(['-v', '{}:{}'.format(mount_path, val)])
 
         if self._cli.e is not None:
             for env in self._cli.e:
-                cmd.extend(['-e', '{}'.format(env)])
+                if 'e' not in self._cfg:
+                    self._cfg['e'] = {}
+                self._cfg['e'][env[0]] = env[1]
+
+        for key, val in self._cfg.get('e', {}).items():
+            cmd.extend(['-e', '{}={}'.format(key, val)])
 
         for el in self._cfg.get('any', []):
             if el[1] == ' ':
@@ -377,8 +403,7 @@ class _StarterWorker(threading.Thread):
         cmd.append('--restart={}'.format(self._cfg.get('restart', 'always')))
         cmd.extend(['--name', self._cfg['name']])
         cmd.append(self._cfg['image'])
-        if makedir:
-            os.makedirs(self._cfg['data_path'], exist_ok=True)
+
         result = _docker_run(cmd)
         msg = 'docker run' if result else 'Failed docker run'
         print('{} {}'.format(msg, ' '.join(cmd)))
