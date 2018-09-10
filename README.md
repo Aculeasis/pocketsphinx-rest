@@ -11,8 +11,6 @@ pocketsphinx-rest
 
 Полное описание [тут](https://github.com/Aculeasis/docker-starter)
 
-PS: Т.к. готовых образов для armv7l нет их можно только собрать добавив ключь `-b`
-
 ### Готовый докер
 - aarch64 `docker run -d -p 8085:8085 aculeasis/pocketsphinx-rest:arm64v8`
 - armv7l`docker run -d -p 8085:8085 aculeasis/pocketsphinx-rest:arm32v7`
