@@ -1,5 +1,7 @@
 pocketsphinx-rest
 ============
+[![Docker Pulls](https://img.shields.io/docker/pulls/aculeasis/pocketsphinx-rest.svg)](https://hub.docker.com/r/aculeasis/pocketsphinx-rest/)
+
 Простой веб-сервис распознавания речи с помощью [PocketSphinx](https://github.com/cmusphinx/pocketsphinx)
 
 ## Установка
@@ -12,13 +14,9 @@ pocketsphinx-rest
 PS: Т.к. готовых образов для armv7l нет их можно только собрать добавив ключь `-b`
 
 ### Готовый докер
-На aarch64 (Например Orange Pi Prime и прочие H5):
-
-`docker run -d -p 8085:8085 aculeasis/pocketsphinx-rest:arm64v8`
-
-На обычной x86_64:
-
-`docker run -d -p 8085:8085 aculeasis/pocketsphinx-rest:amd64`
+- aarch64 `docker run -d -p 8085:8085 aculeasis/pocketsphinx-rest:arm64v8`
+- armv7l`docker run -d -p 8085:8085 aculeasis/pocketsphinx-rest:arm32v7`
+- x86_64 `docker run -d -p 8085:8085 aculeasis/pocketsphinx-rest:amd64`
 
 ## API
 Просто отправить файл через POST
