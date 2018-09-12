@@ -2,7 +2,7 @@
 
 import os
 
-import docker_starter as ds
+import docker_starter.docker_starter as ds
 
 NAME = 'pocketsphinx_rest'
 AARCH = ds.get_arch()
