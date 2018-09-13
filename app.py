@@ -33,12 +33,17 @@ app = Flask(__name__, static_url_path='')
 @app.route('/stt', methods=['GET', 'POST'])
 def say():
     if request.method == 'POST':
-        if not request.data:
+        target = None
+        if request.headers.get('Transfer-Encoding') == 'chunked':
+            target = request.stream
+        elif request.data:
+            target = BytesIO(request.data)
+
+        if target is None:
             text = 'No data'
             code = 1
         else:
-            ps.decode_fp(fp=BytesIO(request.data))
-            text = ps.hypothesis()
+            text = ps.decode_fp(fp=target).hypothesis()
             code = 0
     else:
         text = 'What do you want? I accept only POST!'
