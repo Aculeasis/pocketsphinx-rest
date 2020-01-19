@@ -16,6 +16,16 @@ pocketsphinx-rest
 - armv7l`docker run -d -p 8085:8085 aculeasis/pocketsphinx-rest:arm32v7`
 - x86_64 `docker run -d -p 8085:8085 aculeasis/pocketsphinx-rest:amd64`
 
+
+### Сборка и запуск докера
+```
+git clone https://github.com/Aculeasis/pocketsphinx-rest
+cd pocketsphinx-rest
+# Указать Dockerfile под целевую архитектуру
+docker build -t pocketsphinx-rest -f Dockerfile.arm64v8 .
+docker run -d -p 8085:8085 pocketsphinx-rest
+```
+
 ## API
 Просто отправить файл через POST
 
