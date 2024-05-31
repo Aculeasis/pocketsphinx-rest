@@ -1,21 +1,24 @@
-pocketsphinx-rest
+[pocketsphinx-rest](https://github.com/Aculeasis/pocketsphinx-rest)
 ============
-[![Docker Pulls](https://img.shields.io/docker/pulls/aculeasis/pocketsphinx-rest.svg)](https://hub.docker.com/r/aculeasis/pocketsphinx-rest/)
 
-Простой веб-сервис распознавания речи с помощью [PocketSphinx](https://github.com/cmusphinx/pocketsphinx)
+Простой веб-сервис распознавания речи с помощью [PocketSphinx](https://github.com/cmusphinx/pocketsphinx).
 
-## Установка
-### Быстрый старт
+## Docker
+```bash
+docker run -d \
+  --name=rhvoice-rest \
+  -p 8085:8085 \
+  --restart unless-stopped \
+  ghcr.io/aculeasis/pocketsphinx-rest:latest
+```
+Поддерживаемые архитектуры:
+| Architecture | Available | Tag |
+| :----: | :----: | ---- |
+| x86-64 | ✅ | amd64 |
+| arm64 | ✅ | arm64v8 |
+| armhf | ✅ | arm32v7 |
 
-Запуск\обновление из хаба: `./pocketsphinx_rest.py --upgrade`
-
-Полное описание [тут](https://github.com/Aculeasis/docker-starter)
-
-### Готовый докер
-- aarch64 `docker run -d -p 8085:8085 aculeasis/pocketsphinx-rest:arm64v8`
-- armv7l`docker run -d -p 8085:8085 aculeasis/pocketsphinx-rest:arm32v7`
-- x86_64 `docker run -d -p 8085:8085 aculeasis/pocketsphinx-rest:amd64`
-
+Для автоматического обновления можно использовать [Watchtower](https://github.com/containrrr/watchtower).
 
 ### Сборка и запуск докера
 ```
