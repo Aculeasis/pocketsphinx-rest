@@ -2,15 +2,15 @@ FROM arm32v7/ubuntu:20.04
 LABEL org.opencontainers.image.source https://github.com/Aculeasis/pocketsphinx-rest
 
 ARG RUNTIME_PACKAGES="python3 locales libasound2 apulse"
-ARG BUILD_PACKAGES="git build-essential swig libpulse-dev libasound2-dev python3-dev wget python3-pip python3-setuptools ca-certificates"
+ARG BUILD_PACKAGES="git build-essential swig libpulse-dev cmake libasound2-dev python3-dev wget python3-pip python3-setuptools ca-certificates"
 
 RUN apt-get update -y && \
     apt-get -y install --no-install-recommends $RUNTIME_PACKAGES && \
     apt-mark manual $(apt-mark showauto) && \
-    apt-get -y install --no-install-recommends $BUILD_PACKAGES && \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends $BUILD_PACKAGES && \
     cd /usr/share/locale/ && ls | grep -v 'ru\|en\|locale.alias' | xargs rm -rf && \
     locale-gen ru_RU.UTF-8 && \
-    pip3 install flask pocketsphinx && \
+    pip3 install ninja~=1.10.2.4 flask~=2.0 && pocketsphinx~=5.0 && \
     wget -q https://sourceforge.net/projects/cmusphinx/files/Acoustic%20and%20Language%20Models/Russian/zero_ru_cont_8k_v3.tar.gz/download -O /opt/zero_ru_cont_8k_v3.tar.gz && \
     tar -xzf /opt/zero_ru_cont_8k_v3.tar.gz -C /opt/ && \
     apt-get remove --purge -y $BUILD_PACKAGES $(apt-mark showauto) && \
